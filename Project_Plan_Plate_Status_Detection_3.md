@@ -43,7 +43,7 @@ A complete playbook for the GenAI course final project. Built from the course ru
 | Image size | 224 × 224 | Matches ViT/ResNet50 pretrained input |
 | Backbones to compare | `google/vit-base-patch16-224`, `microsoft/resnet-50`, `facebook/dinov2-base` | Course canon, three architectures (transformer, conv, self-supervised) |
 | Training regime | Two-pass per model: (a) frozen backbone + trained head, then (b) full fine-tuning | Lets you talk about feature extraction vs fine-tuning in the report |
-| Dataset target | ~1,250–1,500 synthetic images (~250–300 per class, 5 classes) | Comfortably fits a Colab session |
+| Dataset target | ~1,500 synthetic images (~300 per class, 5 classes; more if images-per-prompt > 1) | Comfortably fits a Colab session |
 | Real photos (50) | Used as prompt inspiration + as the source for degradation parameter calibration | Your choice; see "optional bonus" in §10 |
 | Demo interface | Gradio app, deployed to Hugging Face Spaces | Free, one-click, matches spec |
 
@@ -62,19 +62,19 @@ Hammer this paragraph in slide 1 of both interim and final.
 ## 4. Dataset Generation Pipeline
 
 ### 4.1 Class taxonomy and balance
-Target ~250–300 images per class, so roughly:
-- `clean`: 280
-- `empty`: 280
-- `finished_leftovers`: 280
-- `full`: 280  (moderate-to-full; merges the old `semi_full` + `full`)
-- `unclassified`: 280  (borrowed from the other classes, then heavily corrupted in §4.4)
+Target ~300 images per class (one image per prompt; 300 prompts/class from §4.2):
+- `clean`: 300
+- `empty`: 300
+- `finished_leftovers`: 300
+- `full`: 300  (moderate-to-full; merges the old `semi_full` + `full`)
+- `unclassified`: 300  (borrowed from the other classes, then heavily corrupted in §4.4)
 
-That's ~1,400 images total.
+That's ~1,500 images total at one image per prompt. We have the GPU budget, so if we want an even larger set we can raise images-per-prompt in §4.3 (e.g. 2/prompt → ~3,000).
 
 Keep classes balanced — you'll thank yourself when reading the confusion matrix, especially along the subtle `clean`/`empty` boundary.
 
 ### 4.2 Prompt generation (LLM step)
-Use Claude or GPT to generate ~60–80 prompts per class. Use an **attribute-based prompt template** (the rubric explicitly praises attribute-based generation):
+Generate 300 prompts per class — we have the compute budget, so we favor maximal prompt diversity (well above the rubric's 60–80 suggestion). Use an **attribute-based prompt template** (the rubric explicitly praises attribute-based generation):
 
 > "A {plate_color} {plate_shape} plate on a {table_surface}, viewed from {camera_angle}, with {plate_contents}, {cutlery_state}, under {lighting}."
 
@@ -91,6 +91,8 @@ Vary attributes per class:
   - `unclassified`: **no prompts of its own** — instead, sample random prompts from the four classes above; the resulting (normal-looking) images are then corrupted beyond recognition in §4.4 so the plate state can't be read
 - **Cutlery state** (vary freely as a *nuisance attribute*, not a class signal): fork and knife on the plate, cutlery beside the plate, or no cutlery visible. Mixing this across all classes stops the model from cheating by keying on cutlery instead of food amount.
 - **Lighting:** dim restaurant lighting, warm tungsten, fluorescent overhead
+
+> The lists above are illustrative. The **authoritative, weighted pools live in `code/utils.py`** and have been widened for diversity — ~16 plate styles, 7 shapes, 9 table surfaces, 6 cutlery states, 6 lighting moods, and a **~40-dish food list** spanning many cuisines. White / round / top-down stay the plurality (realism) with a diverse tail; all pools are sampled independently of the class so plate appearance never leaks the label.
 
 **Framing matters.** Because the deployed input is a *single cropped plate*, your training images must also be tight single-plate shots — not wide table scenes. Append to every prompt: "close-up of a single plate filling the frame, top-down view." This keeps the synthetic data in the same visual domain as the real cropped inputs, and reduces multi-plate contamination.
 
@@ -111,8 +113,8 @@ pipe = AutoPipelineForText2Image.from_pretrained(
 ```
 
 **Important catch about negative prompts with Turbo.** SDXL-Turbo is meant to run at `guidance_scale=0.0`, and at that setting classifier-free guidance is off — which means **the negative prompt is silently ignored**. Two real options:
-- **Stay on Turbo (fastest):** drop the negative prompt, lean on a strong positive prompt ("a single plate filling the frame, no other objects"), and cull bad images by hand. With ~1,400 images this is a bit over an hour of clicking.
-- **Switch to SD 1.5 or SDXL base (slower, but negative prompts work):** run at `guidance_scale≈7` with `num_inference_steps≈25`. Then a negative prompt like "multiple plates, hands, face, table edge, watermark, text" actively suppresses contamination. On Colab that's several seconds per image instead of one — still fine for ~1,400 images if you let it run.
+- **Stay on Turbo (fastest):** drop the negative prompt, lean on a strong positive prompt ("a single plate filling the frame, no other objects"), and cull bad images by hand. With ~1,500 images this is a bit over an hour of clicking.
+- **Switch to SD 1.5 or SDXL base (slower, but negative prompts work):** run at `guidance_scale≈7` with `num_inference_steps≈25`. Then a negative prompt like "multiple plates, hands, face, table edge, watermark, text" actively suppresses contamination. On Colab that's several seconds per image instead of one — still fine for ~1,500 images if you let it run.
 
 For your timeline, start with Turbo + manual culling, and only fall back to SD 1.5 + CFG if you see heavy multi-plate or hands-in-frame contamination.
 
@@ -354,7 +356,7 @@ Table columns: Title / Year, Task, Methods, Data, Results, Relation to your proj
 - The visual abstract (do not skip — graders love this)
 
 ### Slide 2 — Project achievements and novelty
-- "We did X, Y, Z" — bullet your concrete outputs (~1,400 synthetic images across 5 classes, 3 backbones × 2 regimes compared, degradation ablation, Gradio demo)
+- "We did X, Y, Z" — bullet your concrete outputs (~1,500 synthetic images across 5 classes, 3 backbones × 2 regimes compared, degradation ablation, Gradio demo)
 - The novelty paragraph one more time, sharpened
 
 ### Slide 3 — Methodology review
@@ -385,7 +387,7 @@ Table columns: Title / Year, Task, Methods, Data, Results, Relation to your proj
 
 ### Week 1 — Dataset + interim deliverable
 - **Day 1:** Lock taxonomy. Write LLM prompt template. Generate first 50 prompts and inspect quality.
-- **Day 2:** Generate the rest (~280/class). Generate all ~1,400 undegraded synthetic images on Colab.
+- **Day 2:** Generate the rest (~300/class). Generate all ~1,500 undegraded synthetic images on Colab.
 - **Day 3:** Build the degradation pipeline. Calibrate parameters by inspecting your 50 real photos. Apply to all synthetic images.
 - **Day 4:** Build the train/val/test split. Write `utils.py` with the data loaders.
 - **Day 5:** Run baseline ViT with frozen backbone. Get first metrics. Plot confusion matrix.

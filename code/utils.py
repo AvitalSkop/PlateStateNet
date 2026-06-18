@@ -96,54 +96,85 @@ RESULTS_DIR = ROOT_DIR / "results"
 # appearance carries no label information and cannot become a shortcut.
 
 # Plate style bundles color + material/texture coherently (article baked in).
+# White-ish styles stay the plurality (realistic), with a wide diverse tail.
 PLATE_STYLES = [
-    ("a glossy white porcelain", 30),
-    ("an off-white ceramic", 14),
-    ("a matte cream-colored ceramic", 10),
-    ("a beige stoneware", 9),
-    ("a blue-rimmed white porcelain", 8),
-    ("a dark slate", 6),
-    ("a rustic terracotta", 5),
-    ("a speckled grey stoneware", 5),
-    ("a black matte", 5),
-    ("a patterned ceramic", 3),
+    ("a glossy white porcelain", 26),
+    ("an off-white ceramic", 12),
+    ("a matte cream-colored ceramic", 9),
+    ("a plain white stoneware", 9),
+    ("a blue-rimmed white porcelain", 7),
+    ("a beige stoneware", 7),
+    ("a pale grey ceramic", 6),
+    ("a dark slate", 5),
+    ("a rustic terracotta", 4),
+    ("a speckled grey stoneware", 4),
+    ("a black matte", 4),
+    ("a dark green ceramic", 3),
+    ("a navy blue ceramic", 3),
+    ("a hand-painted patterned ceramic", 3),
+    ("a hammered metal", 2),
+    ("a bamboo", 2),
 ]
 PLATE_SHAPES = [
-    ("round dinner plate", 50),
-    ("oval plate", 12),
-    ("square plate", 12),
-    ("shallow pasta bowl", 13),
-    ("deep dish", 13),
+    ("round dinner plate", 48),
+    ("oval plate", 11),
+    ("square plate", 11),
+    ("shallow pasta bowl", 10),
+    ("deep dish", 9),
+    ("rectangular plate", 6),
+    ("small round appetizer plate", 5),
 ]
 TABLE_SURFACES = [
-    ("a dark wooden table", 30),
-    ("a white tablecloth", 28),
-    ("a light wooden table", 16),
-    ("a marble table", 14),
-    ("a checkered tablecloth", 12),
+    ("a dark wooden table", 24),
+    ("a white tablecloth", 22),
+    ("a light wooden table", 14),
+    ("a rustic wooden table", 10),
+    ("a marble table", 10),
+    ("a checkered tablecloth", 8),
+    ("a slate surface", 5),
+    ("a woven placemat", 4),
+    ("a glass table", 3),
 ]
 # A ceiling camera almost always looks straight down, so top-down dominates.
 CAMERA_ANGLES = [
-    ("directly top-down", 75),
-    ("a slight overhead angle", 25),
+    ("directly top-down", 70),
+    ("a near top-down angle", 18),
+    ("a slight overhead angle", 12),
 ]
 CUTLERY_STATES = [
-    ("a fork and knife resting on it", 34),
-    ("cutlery laid beside it", 33),
-    ("no cutlery visible", 33),
+    ("a fork and knife resting on it", 22),
+    ("a fork and knife laid beside it", 20),
+    ("no cutlery visible", 22),
+    ("a spoon resting on it", 12),
+    ("chopsticks laid beside it", 12),
+    ("a folded napkin beside it", 12),
 ]
 LIGHTINGS = [
-    ("dim restaurant lighting", 38),
-    ("warm tungsten light", 34),
-    ("cool fluorescent overhead light", 28),
+    ("dim restaurant lighting", 26),
+    ("warm tungsten light", 22),
+    ("cool fluorescent overhead light", 18),
+    ("soft natural daylight", 16),
+    ("bright overhead lighting", 10),
+    ("moody low light", 8),
 ]
 
 # Food items used to diversify the food-bearing classes so images do not collapse
-# onto a single dish.
+# onto a single dish. Bare noun phrases (no leading article) so they read well in
+# every phrasing, e.g. "a plate of {food}" / "a few bites of {food}". Many cuisines
+# and dish types for maximum visual variety.
 FOOD_ITEMS = [
-    "pasta with sauce", "rice and vegetables", "a steak with side vegetables",
-    "a green salad", "curry and rice", "grilled chicken and potatoes",
-    "a burger and fries", "noodles", "fish with vegetables", "a portion of stew",
+    "pasta with tomato sauce", "spaghetti bolognese", "creamy fettuccine", "lasagna",
+    "pizza", "mushroom risotto", "mac and cheese",
+    "fried rice", "noodles with vegetables", "ramen", "pad thai", "sushi",
+    "dumplings", "dim sum", "stir-fried vegetables and rice",
+    "chicken curry with rice", "butter chicken with naan", "lentil dahl",
+    "burger and fries", "fish and chips", "grilled steak and mashed potatoes",
+    "roast chicken and vegetables", "grilled salmon and asparagus", "shrimp and rice",
+    "Greek salad", "caesar salad", "mixed green salad", "fruit salad",
+    "vegetable soup", "tomato soup",
+    "hummus and pita", "falafel and salad", "shawarma and rice", "beef kebab and rice",
+    "tacos", "beef burrito", "nachos",
+    "pancakes with syrup", "scrambled eggs and toast", "omelette and salad",
 ]
 
 # Per-class content phrasings - THIS is what actually defines the label.
@@ -153,26 +184,32 @@ CLASS_CONTENTS = {
         "a pristine, completely unused clean plate with no food and no crumbs at all",
         "a spotless freshly-set plate, nothing on it, no residue whatsoever",
         "a brand-new looking spotless clean plate, ready to be served on",
+        "an immaculate empty plate straight from the kitchen, perfectly clean",
+        "a clean, polished plate with a spotless surface and no marks or food",
     ],
     "empty": [
         "an empty plate that has been eaten from, bare of food but with light crumbs and sauce smears",
         "a used plate scraped clean of food, only leftover crumbs and a few sauce streaks remaining",
         "a finished empty plate with smudges, crumbs and dried sauce residue, no real food left",
+        "an empty plate after a meal, just grease marks and a few crumbs, no food",
+        "a wiped-out plate with only faint sauce stains and scattered crumbs, no food remaining",
     ],
     "finished_leftovers": [
-        "a small amount of leftover {food}, just a few scraps remaining on the plate",
-        "a nearly finished plate with only a few small bites of {food} left",
+        "a few leftover bites of {food} on an otherwise nearly empty plate",
+        "a nearly finished plate of {food}, only a few small scraps left",
+        "a mostly eaten plate with just a few bites of {food} left in one corner",
         "a crumpled paper napkin and an empty food wrapper left on the plate",
         "a used napkin and small food scraps left behind on the plate",
+        "a scrunched tissue and an empty foil container left on the plate",
     ],
     # `full` now spans moderate -> full (the old semi_full and full classes merged).
     "full": [
-        "a full plate piled with a complete fresh portion of {food}",
-        "a full, untouched serving of {food} filling the whole plate",
-        "a generously plated full meal of {food}, the plate completely covered with food",
-        "a moderate amount of {food} covering part of the plate, clearly more than scraps",
-        "a half-eaten plate of {food}, about half of the portion remaining",
-        "a partially eaten serving of {food}, the plate is roughly half covered",
+        "a full plate of {food}, a complete fresh portion piled high",
+        "a generous full serving of {food} filling the whole plate",
+        "a plate completely covered with a hearty portion of {food}",
+        "a moderate plate of {food}, clearly more than scraps but not overflowing",
+        "a half-eaten plate of {food}, about half of the portion still remaining",
+        "a partly eaten plate of {food}, roughly half of it still covered with food",
     ],
 }
 
@@ -204,7 +241,7 @@ def _make_contents(rng: random.Random, class_name: str) -> str:
     return phrasing
 
 
-def build_prompts(n_per_class: int = 70, seed: int = SEED) -> dict[str, list[str]]:
+def build_prompts(n_per_class: int = 300, seed: int = SEED) -> dict[str, list[str]]:
     """
     Build attribute-based text-to-image prompts for every class.
 
