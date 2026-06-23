@@ -224,6 +224,11 @@ data/synthetic_clean/
 data/synthetic_degraded/
 data/_pilot/
 
+# Our forked shlomi/ workspace (generated data)
+shlomi/data/synthetic_clean/
+shlomi/data/synthetic_degraded/
+shlomi/data/_pilot/
+
 # Trained model weights / checkpoints
 *.pt
 *.pth

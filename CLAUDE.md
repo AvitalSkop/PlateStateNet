@@ -42,4 +42,6 @@ Code notebooks are numbered in execution order: `01_generate_prompts` → `02_ge
 - Before scaling image generation, generate **10 per class** and confirm the four *content* states (`clean`, `empty`, `finished_leftovers`, `full`) are visually distinct after degradation — pay special attention to `clean` vs `empty`, the subtlest pair. (`unclassified` is the exception: it's *meant* to be unidentifiable after its heavier corruption.) Only then scale to the full set.
 
 ## Current state
-Pre-implementation. Artifacts present: this file, `Project_Plan_Plate_Status_Detection_3.md`, and the `real_restaurant_cctv/` reference images. No code, `requirements.txt`, or build tooling exists yet — once it does, add the real run/setup commands here.
+Stages 01 (prompts) and 02 (image generation) are built. **Our pipeline is a self-contained fork in `shlomi/`** — its own `utils.py` (paths rooted at `shlomi/data/`), `01_generate_prompts.ipynb`, and `02_generate_images.ipynb` using **FLUX.1-dev**. Run our notebooks from `shlomi/`.
+
+The shared `code/` folder holds the original `utils.py` + `01_generate_prompts.ipynb` **plus Avital's divergent notebooks** (Stable Diffusion generation, ResNet18 + CLIP training: `02_generate_images_clean`, `03_degrade_and_augment`, `04_split_dataset`, `05_train_model_clean`). **Do not modify anything under `code/`** — that's Avital's. See `shlomi/README.md`.
