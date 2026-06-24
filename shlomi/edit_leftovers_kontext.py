@@ -50,6 +50,9 @@ ap.add_argument("--dtype", choices=["bf16", "fp16", "fp32"], default="bf16",
 ap.add_argument("--max-side", type=int, default=512,
                 help="working resolution: Kontext defaults to 1024 (OOMs a 32GB V100). 512 keeps "
                      "the attention small enough to fit and matches our dataset size.")
+ap.add_argument("--offload", choices=["model", "sequential"], default="sequential",
+                help="model = fast but keeps the whole 24GB transformer on GPU (OOMs a 32GB V100 "
+                     "with Kontext's extra image tokens); sequential = streams layers, fits but slower")
 ap.add_argument("--model", default="black-forest-labs/FLUX.1-Kontext-dev")
 args = ap.parse_args()
 
@@ -115,9 +118,12 @@ def main() -> None:
         srcs = srcs[:args.limit]
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    log(f"loading {args.model} on GPU {args.gpu} ({args.dtype} + cpu offload) ...")
+    log(f"loading {args.model} on GPU {args.gpu} ({args.dtype} + {args.offload} offload) ...")
     pipe = FluxKontextPipeline.from_pretrained(args.model, torch_dtype=DTYPE)
-    pipe.enable_model_cpu_offload()
+    if args.offload == "sequential":
+        pipe.enable_sequential_cpu_offload()
+    else:
+        pipe.enable_model_cpu_offload()
     pipe.set_progress_bar_config(disable=True)
     log(f"loaded. editing {len(srcs)} full plates -> leftovers @ {args.size}px, {args.steps} steps.")
 
