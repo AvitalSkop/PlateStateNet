@@ -47,6 +47,9 @@ ap.add_argument("--out", default=None,
 ap.add_argument("--overwrite", action="store_true", help="re-edit even if the output already exists")
 ap.add_argument("--dtype", choices=["bf16", "fp16", "fp32"], default="bf16",
                 help="bf16 avoids the fp16 NaN/black-image bug Kontext hits on V100 (default)")
+ap.add_argument("--max-side", type=int, default=512,
+                help="working resolution: Kontext defaults to 1024 (OOMs a 32GB V100). 512 keeps "
+                     "the attention small enough to fit and matches our dataset size.")
 ap.add_argument("--model", default="black-forest-labs/FLUX.1-Kontext-dev")
 args = ap.parse_args()
 
@@ -134,6 +137,7 @@ def main() -> None:
         edited = pipe(
             image=image,
             prompt=instruction,
+            max_area=args.max_side * args.max_side,  # cap resolution -> fits 32GB, faster
             guidance_scale=args.guidance,
             num_inference_steps=args.steps,
             generator=torch.Generator("cpu").manual_seed(seed),
