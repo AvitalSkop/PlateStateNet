@@ -210,29 +210,29 @@ CLASS_CONTENTS = {
         "an empty plate after a meal, just grease marks and a few crumbs, no food",
         "a wiped-out plate with only faint sauce stains and scattered crumbs, no food remaining",
     ],
-    # GOAL: "most of the dish was eaten" - an almost-bare plate, ready to clear.
-    # CRITICAL: NO dish name ({food}) here. FLUX anchors on a named dish ("fried
-    # rice", "stew") and draws a full serving of it, ignoring "almost empty". With
-    # only generic remnants (scraps/smears/crumbs) there is no dish for it to draw,
-    # so the plate stays bare. This must read clearly emptier than `full`.
+    # GOAL: "most of the dish was eaten" - a mostly-empty plate, ready to clear,
+    # but with ONE small VISIBLE leftover morsel so it is distinguishable from
+    # `empty` (which has only crumbs/smears). CRITICAL: still NO dish name ({food}) -
+    # a named dish makes FLUX draw a full serving. Keep the food a single small
+    # generic morsel on an otherwise bare plate, so it stays clearly emptier than `full`.
     "finished_leftovers": [
-    "an almost entirely empty plate at the end of a meal, scraped nearly clean, with only a few tiny food scraps, faint smears of sauce and scattered crumbs left in one corner",
-    "a mostly bare plate after eating, just a couple of small leftover scraps and streaks of dried sauce, most of the food already gone, clearly ready to be cleared",
-    "a largely empty plate, the meal finished, only a small smear of sauce, a few crumbs and a tiny leftover morsel of food remaining",
-    "a nearly clean plate after a meal, scattered crumbs and one small leftover bite of food pushed to the side, the rest already eaten",
+    "a mostly empty plate, most of the meal already eaten, with just one small leftover bite of food and a smear of sauce left to one side",
+    "a largely bare plate after eating, only a single small piece of food remaining among crumbs and sauce streaks, clearly ready to be cleared",
+    "an almost finished plate, the meal nearly done, with a couple of small food scraps and a streak of sauce on the otherwise empty surface",
+    "a mostly eaten plate with one small morsel of food left in a corner, surrounded by scattered crumbs and dried sauce stains",
     ],
     # `full` spans MODERATE -> full (old semi_full + full merged) and is "do not
-    # clear". Mix complete portions with PARTIALLY-eaten ones. For the latter, give
-    # FLUX a concrete VISUAL of eating (a gap / an eaten-away edge) rather than the
-    # abstract "in progress" (which it can't render) - but keep PLENTY of food left
-    # so they stay clearly fuller than finished_leftovers.
+    # clear". Mix complete portions with PARTIALLY-eaten ones. FLUX won't draw a
+    # clean "eaten-away gap", but it CAN render a MESSY, dug-into, pushed-around
+    # portion - so describe it that way, while keeping PLENTY of food left so these
+    # stay clearly fuller than finished_leftovers.
     "full": [
     "a full plate of {food}, a complete fresh portion, casually served and a bit uneven",
     "a generous serving of {food} piled unevenly across the whole plate, plated homestyle and slightly messy",
     "a plate heaped with a large helping of {food}, sauce splashed naturally, not neatly arranged",
-    "a plate of {food} with one side already eaten away leaving an empty gap, but a large portion of the food still remaining on the plate",
-    "a partially eaten plate of {food}, a chunk gone from one edge and the fork dug in, yet plenty of the serving still left",
-    "a plate still holding a big serving of {food}, a few forkfuls eaten from one side, most of the generous portion untouched",
+    "a large messy serving of {food}, partly eaten and pushed around the plate, with plenty of food still left",
+    "a big portion of {food} dug into and messed up on one side, half eaten but still a lot remaining",
+    "a generous serving of {food} that has been scattered and partly eaten, clearly messy yet plenty still on the plate",
     ],
 }
 
@@ -245,8 +245,9 @@ CLASS_CONTENTS = {
 PROMPT_TEMPLATE = (
     "{style} {shape} on {surface}, viewed from {angle}, "
     "with {contents}, {cutlery}, under {lighting}. "
-    "A candid, slightly imperfect overhead phone snapshot of a single plate "
-    "filling the frame, natural and unstaged."
+    "A casual, slightly imperfect amateur phone snapshot of a single plate filling "
+    "the frame, with natural uneven lighting, faint grain and slightly soft focus - "
+    "a real candid photo taken in a restaurant, not a polished studio food shot."
 )
 
 
