@@ -45,6 +45,8 @@ ap.add_argument("--out", default=None,
                 help="output folder (default: synthetic_clean/finished_leftovers, in place). "
                      "Use a new folder to keep the originals for an A/B compare.")
 ap.add_argument("--overwrite", action="store_true", help="re-edit even if the output already exists")
+ap.add_argument("--dtype", choices=["bf16", "fp16", "fp32"], default="bf16",
+                help="bf16 avoids the fp16 NaN/black-image bug Kontext hits on V100 (default)")
 ap.add_argument("--model", default="black-forest-labs/FLUX.1-Kontext-dev")
 args = ap.parse_args()
 
@@ -55,6 +57,8 @@ from diffusers import FluxKontextPipeline  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import utils                            # noqa: E402
+
+DTYPE = {"bf16": torch.bfloat16, "fp16": torch.float16, "fp32": torch.float32}[args.dtype]
 
 SRC_DIR = (Path(args.src) if args.src else (utils.CLEAN_DIR / "full")).resolve()
 OUT_DIR = (Path(args.out) if args.out else (utils.CLEAN_DIR / "finished_leftovers")).resolve()
@@ -108,8 +112,8 @@ def main() -> None:
         srcs = srcs[:args.limit]
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    log(f"loading {args.model} on GPU {args.gpu} (fp16 + cpu offload) ...")
-    pipe = FluxKontextPipeline.from_pretrained(args.model, torch_dtype=torch.float16)
+    log(f"loading {args.model} on GPU {args.gpu} ({args.dtype} + cpu offload) ...")
+    pipe = FluxKontextPipeline.from_pretrained(args.model, torch_dtype=DTYPE)
     pipe.enable_model_cpu_offload()
     pipe.set_progress_bar_config(disable=True)
     log(f"loaded. editing {len(srcs)} full plates -> leftovers @ {args.size}px, {args.steps} steps.")
