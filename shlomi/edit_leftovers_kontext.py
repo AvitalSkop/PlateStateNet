@@ -14,12 +14,15 @@ so the only thing that differs is the food amount (the actual label) - no style 
 Source images: any folder of full-plate photos (default: shlomi/data/synthetic_clean/full).
 Output: shlomi/data/synthetic_clean/finished_leftovers/ (overwrites the text2img ones).
 
+Speed: Kontext (12B) doesn't fit a 32GB V100, so the default --quant 8bit loads the transformer +
+T5 quantized -> the whole model fits on ONE GPU with no CPU offload (minutes/img -> ~tens of s/img).
+
 Prereqs:
     - Accept the license for black-forest-labs/FLUX.1-Kontext-dev on HF (gated); cached token works.
-    - diffusers with FluxKontextPipeline (>=0.35; you have 0.37.1).
+    - diffusers with FluxKontextPipeline (>=0.35) and:  pip install bitsandbytes
 
-Pilot (edit 5 full plates):
-    python shlomi/edit_leftovers_kontext.py --gpu 0 --limit 5
+Pilot (edit 5 full plates, quantized):
+    python shlomi/edit_leftovers_kontext.py --gpu 0 --limit 5 --quant 8bit
 Full (edit all images in --src):  drop --limit.
 Headless:  nohup ... > shlomi/gen_kontext.log 2>&1 &
 """
@@ -51,8 +54,13 @@ ap.add_argument("--max-side", type=int, default=512,
                 help="working resolution: Kontext defaults to 1024 (OOMs a 32GB V100). 512 keeps "
                      "the attention small enough to fit and matches our dataset size.")
 ap.add_argument("--offload", choices=["model", "sequential"], default="sequential",
-                help="model = fast but keeps the whole 24GB transformer on GPU (OOMs a 32GB V100 "
-                     "with Kontext's extra image tokens); sequential = streams layers, fits but slower")
+                help="ONLY used with --quant none. model = keeps the 24GB transformer on GPU "
+                     "(OOMs a 32GB V100); sequential = streams layers, fits but very slow")
+ap.add_argument("--quant", choices=["none", "8bit", "4bit"], default="8bit",
+                help="quantize the transformer + T5 so the whole model fits on one 32GB V100 with "
+                     "NO offload (the big speed win). 8bit is the safe default on V100 (Volta); "
+                     "4bit is smaller/faster but its Volta kernels are not guaranteed. "
+                     "Needs: pip install bitsandbytes")
 ap.add_argument("--model", default="black-forest-labs/FLUX.1-Kontext-dev")
 args = ap.parse_args()
 
@@ -108,6 +116,52 @@ def build_instruction(rng: random.Random) -> str:
     return " ".join(parts)
 
 
+def load_pipeline():
+    """Load FLUX.1-Kontext.
+
+    With --quant 8bit/4bit the transformer and the T5 text-encoder are loaded quantized, so the
+    whole pipeline fits on one 32GB V100 and runs FULLY on the GPU with no offload - the big speed
+    win. With --quant none we fall back to the (slow) CPU-offload path for debugging.
+    """
+    if args.quant == "none":
+        log(f"loading {args.model} on GPU {args.gpu} ({args.dtype}, {args.offload} offload) ...")
+        pipe = FluxKontextPipeline.from_pretrained(args.model, torch_dtype=DTYPE)
+        if args.offload == "sequential":
+            pipe.enable_sequential_cpu_offload()
+        else:
+            pipe.enable_model_cpu_offload()
+        return pipe
+
+    log(f"loading {args.model} on GPU {args.gpu} ({args.dtype}, {args.quant} quantized, no offload) ...")
+    from diffusers import FluxTransformer2DModel
+    from diffusers import BitsAndBytesConfig as DiffusersBnbConfig
+    from transformers import T5EncoderModel
+    from transformers import BitsAndBytesConfig as TransformersBnbConfig
+
+    if args.quant == "8bit":
+        diff_q = DiffusersBnbConfig(load_in_8bit=True)
+        t5_q = TransformersBnbConfig(load_in_8bit=True)
+    else:  # 4bit (NF4) - smaller/faster, but Volta (V100) kernels are not guaranteed
+        diff_q = DiffusersBnbConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
+                                    bnb_4bit_compute_dtype=DTYPE)
+        t5_q = TransformersBnbConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
+                                     bnb_4bit_compute_dtype=DTYPE)
+
+    # The two big components, loaded quantized (they land on the GPU).
+    transformer = FluxTransformer2DModel.from_pretrained(
+        args.model, subfolder="transformer", quantization_config=diff_q, torch_dtype=DTYPE)
+    text_encoder_2 = T5EncoderModel.from_pretrained(
+        args.model, subfolder="text_encoder_2", quantization_config=t5_q, torch_dtype=DTYPE)
+
+    pipe = FluxKontextPipeline.from_pretrained(
+        args.model, transformer=transformer, text_encoder_2=text_encoder_2, torch_dtype=DTYPE)
+    # transformer + T5 are already on the GPU; move the small un-quantized parts (CLIP, VAE) there
+    # too. Do NOT call pipe.to("cuda") - it raises on bnb-quantized modules.
+    pipe.vae.to("cuda")
+    pipe.text_encoder.to("cuda")
+    return pipe
+
+
 def main() -> None:
     if not SRC_DIR.is_dir() or not any(SRC_DIR.glob("*.jpg")):
         sys.exit(f"No source images in {SRC_DIR}. Generate some 'full' plates there first "
@@ -118,12 +172,7 @@ def main() -> None:
         srcs = srcs[:args.limit]
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    log(f"loading {args.model} on GPU {args.gpu} ({args.dtype} + {args.offload} offload) ...")
-    pipe = FluxKontextPipeline.from_pretrained(args.model, torch_dtype=DTYPE)
-    if args.offload == "sequential":
-        pipe.enable_sequential_cpu_offload()
-    else:
-        pipe.enable_model_cpu_offload()
+    pipe = load_pipeline()
     pipe.set_progress_bar_config(disable=True)
     log(f"loaded. editing {len(srcs)} full plates -> leftovers @ {args.size}px, {args.steps} steps.")
 
