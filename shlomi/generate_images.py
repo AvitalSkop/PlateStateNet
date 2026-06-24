@@ -38,6 +38,9 @@ ap.add_argument("--per-class", type=int, default=0,
 ap.add_argument("--skip-unclassified", action="store_true",
                 help="don't generate the 'unclassified' class (it just borrows other prompts; "
                      "its degraded images are made later in step 03)")
+ap.add_argument("--classes", nargs="+", default=None, metavar="CLASS",
+                help="only generate these classes (e.g. --classes empty finished_leftovers). "
+                     "Default: all. Order still follows CLASS_NAMES.")
 ap.add_argument("--model", default="black-forest-labs/FLUX.1-dev")
 args = ap.parse_args()
 
@@ -59,9 +62,15 @@ def log(msg: str) -> None:
 def main() -> None:
     prompts = utils.load_prompts()
 
-    # Classes to generate this run (optionally skip the borrow-only 'unclassified').
+    # Classes to generate this run: optional explicit --classes filter, and/or skip
+    # the borrow-only 'unclassified'. Order always follows CLASS_NAMES.
+    if args.classes:
+        unknown = [c for c in args.classes if c not in utils.CLASS_NAMES]
+        if unknown:
+            sys.exit(f"Unknown class(es): {unknown}. Valid: {utils.CLASS_NAMES}")
+    selected = set(args.classes) if args.classes else set(utils.CLASS_NAMES)
     classes = [c for c in utils.CLASS_NAMES
-               if not (args.skip_unclassified and c == utils.UNCLASSIFIED)]
+               if c in selected and not (args.skip_unclassified and c == utils.UNCLASSIFIED)]
 
     def plist(cls):
         """Prompts for a class, optionally capped by --per-class."""
