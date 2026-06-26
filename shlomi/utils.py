@@ -151,17 +151,16 @@ TABLE_SURFACES = [
     ("a woven placemat", 4),
     ("a glass table", 3),
 ]
-# Real restaurant cameras are usually wall/corner-mounted, so we want MOSTLY angled
-# shots: ~30% straight top-down, ~70% at a clear oblique angle. Weak words ("slight
-# tilt") + "high overhead angle" made FLUX default to top-down, so we now use STRONG,
-# CONCRETE perspective cues (camera to the side, plate seen in perspective, round rim
-# as an ellipse) and state the sharpness explicitly (mild / clear three-quarter /
-# sharp steep). No degree numbers (avoids a stray number rendering into the image).
+# Restaurant cameras are usually wall/corner-mounted, so ~1/3 straight top-down and
+# ~2/3 angled - but only MILD-to-MODERATE tilt (the earlier "sharp steep oblique" came
+# out too slanted). We keep the concrete perspective cues that actually work (camera a
+# little to the side, plate seen in perspective) but cap the magnitude at "clearly
+# angled", with no steep/strong-slant wording. No degree numbers (avoids stray text).
 CAMERA_ANGLES = [
-    ("directly top-down, the camera straight above the plate looking down", 32),
-    ("a mild oblique angle, the camera a little to the side so the plate is seen slightly in perspective rather than flat overhead", 22),
-    ("a clear three-quarter angle, the camera well off to one side looking down and across the plate, the round rim appearing as an ellipse in perspective", 24),
-    ("a sharp, steep oblique angle from above and to the side, the plate seen at a strong slant in clear perspective", 22),
+    ("directly top-down, the camera straight above the plate looking down", 34),
+    ("a slight overhead angle, the camera just a little off to the side so the plate is seen barely in perspective", 26),
+    ("a moderate overhead angle, the camera somewhat to the side looking down at the plate in gentle perspective", 24),
+    ("a clearly angled overhead view, the camera off to one side looking down at the plate in perspective", 16),
 ]
 CUTLERY_STATES = [
     ("a fork and knife resting on it", 25),

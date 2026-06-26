@@ -41,6 +41,9 @@ ap.add_argument("--skip-unclassified", action="store_true",
 ap.add_argument("--classes", nargs="+", default=None, metavar="CLASS",
                 help="only generate these classes (e.g. --classes empty finished_leftovers). "
                      "Default: all. Order still follows CLASS_NAMES.")
+ap.add_argument("--out", default=None,
+                help="output base folder (default: shlomi/data/synthetic_clean). Use a new folder "
+                     "to keep a previous set intact, e.g. shlomi/data/synthetic_clean_v2.")
 ap.add_argument("--model", default="black-forest-labs/FLUX.1-dev")
 args = ap.parse_args()
 
@@ -53,6 +56,19 @@ from diffusers import FluxPipeline  # noqa: E402
 # Import the local shlomi/utils.py (this file lives in shlomi/).
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import utils                       # noqa: E402
+
+# Output base: default to the shared synthetic_clean, or a custom --out folder.
+OUT_DIR = Path(args.out).resolve() if args.out else utils.CLEAN_DIR
+MANIFEST = OUT_DIR / "manifest.csv"
+
+
+def _rel(p) -> str:
+    """Path relative to the repo if possible, else absolute (robust for any --out)."""
+    p = Path(p).resolve()
+    try:
+        return str(p.relative_to(utils.ROOT_DIR))
+    except ValueError:
+        return str(p)
 
 
 def log(msg: str) -> None:
@@ -104,7 +120,7 @@ def main() -> None:
     t0 = time.time()
     made = done = 0
     for cls in classes:
-        out_dir = utils.class_dir(utils.CLEAN_DIR, cls)
+        out_dir = utils.class_dir(OUT_DIR, cls)
         for p_i, prompt in enumerate(plist(cls)):
             for k in range(args.images_per_prompt):
                 done += 1
@@ -118,22 +134,22 @@ def main() -> None:
                 log(f"{done}/{total}  [{cls}]  {rate:.0f}s/img  ETA ~{eta_min:.0f} min")
 
     # Manifest (rebuilt from the same deterministic loop; robust to resumes).
-    utils.CLEAN_DIR.mkdir(parents=True, exist_ok=True)
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
     rows = 0
-    with open(utils.MANIFEST_PATH, "w", newline="", encoding="utf-8") as f:
+    with open(MANIFEST, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["filepath", "class", "seed", "model", "prompt"])
         for cls in classes:
             for p_i, prompt in enumerate(plist(cls)):
                 for k in range(args.images_per_prompt):
-                    fp = utils.CLEAN_DIR / cls / f"{cls}_{p_i:04d}_{k}.jpg"
+                    fp = OUT_DIR / cls / f"{cls}_{p_i:04d}_{k}.jpg"
                     if fp.exists():
-                        w.writerow([str(fp.relative_to(utils.ROOT_DIR)), cls,
+                        w.writerow([_rel(fp), cls,
                                     seed_for(cls, p_i, k), args.model, prompt])
                         rows += 1
 
     log(f"DONE. {made} new images this run | {rows} total on disk | "
-        f"elapsed {(time.time() - t0) / 60:.0f} min | manifest -> {utils.MANIFEST_PATH}")
+        f"elapsed {(time.time() - t0) / 60:.0f} min | manifest -> {MANIFEST}")
 
 
 if __name__ == "__main__":
