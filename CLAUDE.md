@@ -7,15 +7,13 @@ GenAI course final project. A classifier that decides whether a restaurant table
 
 ## Critical domain rules (easy to get wrong — get these right)
 - **Input is ONE still image of ONE plate.** Not video, not a sequence of frames. The crop is done by an upstream model and is out of scope — assume the input is already a tight, cropped single plate.
-- **Five classes, defined by the plate's visible state** (not by cutlery, not by whether a diner is present):
+- **Three training classes, defined by the plate's visible state** (not by cutlery, not by whether a diner is present). The model is trained on these 3:
   - `clean` — pristine, fresh, **unused** plate; no food, no crumbs, no residue → **do not clear**
-  - `empty` — **used** plate eaten bare; only crumbs/sauce/residue → **clear**
-  - `finished_leftovers` — small leftovers, or garbage like a napkin/paper → **clear**
-  - `full` — a **moderate-to-full** serving of food (merges the old `semi_full` + `full`) → **do not clear**
-  - `unclassified` — **too degraded to identify** the plate's state → **uncertain** (abstain; see below)
-- **Binary decision rule (non-monotonic by design):** `clear = {empty, finished_leftovers}`, `do not clear = {clean, full}`, and `unclassified → uncertain` (abstain — no auto-action; safe fallback is *do not clear*). A `clean` plate has the least on it yet is *do not clear* (freshly set, diner about to eat), so "clear" is a band in the middle of the food-amount axis, not a threshold — this non-monotonic boundary is the main reason the fine-grained model exists.
-- **`unclassified` has no prompts of its own.** In step 01 it borrows random prompts from the other classes (so the underlying images are normal plates); in `03_degrade_and_augment` those images are corrupted so heavily the food state is unreadable. The class only becomes meaningful *after* degradation, so it's inherently tied to the degraded condition.
-- **`clean` vs `empty` is the subtlest pair — watch it.** Pristine-unused vs eaten-bare-with-crumbs can blur together under heavy degradation; expect that confusion in the matrix and treat it as error-analysis material, not a bug.
+  - `finished` — the meal is **over**: a used plate eaten bare (crumbs/sauce/residue) **or** with only small leftovers / garbage (napkin, paper) → **clear**
+  - `full` — a **moderate-to-full** serving of food → **do not clear**
+- **Data is GENERATED with a finer 5-class scheme, then consolidated to the 3 above.** Generation classes (in `utils.py` / `prompts.json`): `clean`, `empty` (eaten bare), `finished_leftovers` (small leftovers/garbage), `full`, `unclassified` (borrowed prompts, later corrupted until unreadable). Consolidation for training: `empty` + `finished_leftovers` → `finished`; `unclassified` is **dropped**. `utils.py`/`prompts.json` keep the 5-class generation lineage; `03`–`05` use the 3 classes read directly from the class folders on disk. Full mapping in `shlomi/data/class_taxonomy.md`. (The Project Plan still describes the older 5-class scheme.)
+- **Binary decision rule (non-monotonic by design):** `clear = {finished}`, `do not clear = {clean, full}`. A `clean` plate has the least on it yet is *do not clear* (freshly set, diner about to eat), while `finished` (scraps) is *clear* and `full` (most food) is *do not clear* — so "clear" is a band in the middle of the food-amount axis, not a threshold. This non-monotonic boundary is the main reason the fine-grained model exists.
+- **`clean` vs `finished` is the subtlest pair — watch it.** Pristine-unused vs eaten-bare-with-crumbs can blur together under heavy degradation; expect that confusion in the matrix and treat it as error-analysis material, not a bug.
 - **Cutlery is a nuisance attribute, not a label signal.** Vary it randomly across all classes in prompts so the model keys on food amount, never on cutlery presence.
 - **`real_restaurant_cctv/` images are calibration/inspiration ONLY — never training or test data.** Use them to (a) inform diffusion prompts and (b) measure realistic degradation parameters (resolution, noise, blur, JPEG quality). The training/eval dataset is 100% synthetic.
 
@@ -39,9 +37,9 @@ Code notebooks are numbered in execution order: `01_generate_prompts` → `02_ge
 
 ## How to build
 - **Incrementally, one numbered step at a time.** Validate each before moving on. Do not attempt to build the whole project in one pass.
-- Before scaling image generation, generate **10 per class** and confirm the four *content* states (`clean`, `empty`, `finished_leftovers`, `full`) are visually distinct after degradation — pay special attention to `clean` vs `empty`, the subtlest pair. (`unclassified` is the exception: it's *meant* to be unidentifiable after its heavier corruption.) Only then scale to the full set.
+- Before scaling image generation, generate **10 per class** and confirm the content states are visually distinct after degradation — pay special attention to `clean` vs eaten-bare (`empty`/`finished`), the subtlest pair. (Generation still uses the finer scheme; `unclassified`, if generated, is *meant* to be unidentifiable after heavier corruption.) Only then scale to the full set.
 
 ## Current state
-Stages 01 (prompts) and 02 (image generation) are built. **Our pipeline is a self-contained fork in `shlomi/`** — its own `utils.py` (paths rooted at `shlomi/data/`), `01_generate_prompts.ipynb`, and `02_generate_images.ipynb` using **FLUX.1-dev**. Run our notebooks from `shlomi/`.
+All five pipeline stages exist in our self-contained fork **`shlomi/`** (its own `utils.py`, paths rooted at `shlomi/data/`): `01_generate_prompts` + `02_generate_images` (**FLUX.1-dev**) build the undegraded set; `03_degrade_and_augment` (class-agnostic CCTV degradation — novelty #1), `04_split_dataset`, and `05_train_model` (ResNet18 + CLIP baseline) split, train and evaluate. Run our notebooks from `shlomi/`. We have **consolidated to 3 training classes** (`clean` / `finished` / `full`) and treat the generated dataset as good enough to train on. Avital owns model training; our focus is the FLUX generation + the CCTV degradation pipeline.
 
 The shared `code/` folder holds the original `utils.py` + `01_generate_prompts.ipynb` **plus Avital's divergent notebooks** (Stable Diffusion generation, ResNet18 + CLIP training: `02_generate_images_clean`, `03_degrade_and_augment`, `04_split_dataset`, `05_train_model_clean`). **Do not modify anything under `code/`** — that's Avital's. See `shlomi/README.md`.
