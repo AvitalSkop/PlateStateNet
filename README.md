@@ -1,9 +1,5 @@
 # Food Consumption Level Classification
 
-**Authors:** Shlomi Ben Shitrit, Yarden Aviad, Avital Skop
-
----
-
 ## Description
 
 In real-world restaurant environments, understanding the state of a plate (clean, finished, or full) can support automation and improve service efficiency.
@@ -130,31 +126,15 @@ Pipeline steps:
 
 ---
 
-## Limitations
-
-- Very small real-world dataset (~30 images)  
-- Synthetic data does not fully capture real-world variability  
-
----
-
-## Future Work
-
-### System-Level
-- Plate state tracking over time  
-- Waiter decision support system  
-- Multi-table scene understanding  
-
-### Machine Learning
-- Improve augmentation realism  
-- Combine models  
-- Explore self-supervised methods 
----
-
 ## Dataset
 
 Synthetic dataset and real test samples are available here:
 
 👉 [Google Drive Dataset Link](https://drive.google.com/drive/folders/1aZMwEyLMoWOu5gHtUaGOTgruwigfjvJQ)
+
+---
+
+**Team Membrs:** Shlomi Ben Shitrit, Yarden Aviad, Avital Skop
 
 ---
 
