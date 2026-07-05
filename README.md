@@ -1,6 +1,8 @@
 # Food Consumption Level Classification
 
-## Description
+---
+
+## Project Motivation
 
 In real-world restaurant environments, understanding the state of a plate (clean, finished, or full) can support automation and improve service efficiency.
 
@@ -10,7 +12,7 @@ This project investigates whether **synthetic data generation and camera-based a
 
 ---
 
-## Problem Definition
+## Problem Statement
 
 **Input:** Plate image (clean or degraded)  
 **Output:** Consumption state classification (Clean / Finished / Full)
@@ -19,40 +21,34 @@ This project investigates whether **synthetic data generation and camera-based a
 
 ---
 
+## Dataset
 
-## Approach
-
-We propose a pipeline combining synthetic data generation with realistic augmentations:
-
-1. Generate synthetic plate images using FLUX.1-dev  
-2. Apply camera-based augmentations to simulate real-world conditions  
-3. Train CNN models on synthetic data  
-4. Evaluate on both synthetic and real-world images  
-
----
-
-## Synthetic Data Generation
-
-Synthetic images were generated using **FLUX.1-dev** with structured prompt engineering.
-
-- Attribute-based prompt generation  
-- High diversity (≈300 prompts per class)  
-- Fully reproducible using fixed seeds  
+### Synthetic Data
+- Generated using **FLUX.1-dev**
+- ~1950 images (3 classes)
+- ~300 prompts per class (high diversity)
+- Fully reproducible with fixed seeds
 
 Classes:
 - Clean (empty pristine plate)
 - Finished (used plate with residue)
 - Full (plate with food)
 
-<p align="center">
-  <img src="Images/data_examples.jpeg" width="900">
-</p>
+### Real Data
+- ~30 real-world CCTV images
+- Used for evaluation (and minor tuning)
 
 ---
 
-## Augmentation Strategy – Camera Simulation
+## Data Generation & Augmentation
 
-To bridge the synthetic-to-real gap, we simulate real camera conditions:
+### Prompt-Based Generation
+- Attribute-based prompt construction
+- Controlled randomness
+- High variability in plate appearance
+
+### Camera Simulation Augmentations
+To bridge the synthetic → real gap:
 
 - Low resolution (downscaling)
 - Gaussian blur (defocus)
@@ -63,29 +59,38 @@ To bridge the synthetic-to-real gap, we simulate real camera conditions:
 - Vignette effects
 - JPEG compression artifacts
 
-These augmentations approximate the **full image formation process of real cameras**.
+These simulate the **image formation process of real cameras**.
 
 ---
 
-## Models
+## Visual Abstract
 
-We evaluate multiple models:
+<p align="center">
+  <img src="Images/data_examples.jpeg" width="900">
+</p>
 
-### ResNet-based Models
+---
+
+## Models and Pipeline
+
+### Models
 - ResNet18 (Linear Probe + Fine-Tuning)
 - ResNet50 (Linear Probe + Fine-Tuning)
 
+### Pipeline
+1. Generate synthetic data  
+2. Apply augmentations  
+3. Train / validation / test split  
+4. Train models (LP / FT)  
+5. Evaluate on synthetic and real data  
+
 ---
 
-## Pipeline
+## Training Process
 
-Pipeline steps:
-
-- Synthetic data generation  
-- Augmentation  
-- Train / validation / test split  
-- Model training (LP / FT)  
-- Evaluation on synthetic and real data  
+- Models trained primarily on synthetic data  
+- Fine-tuning allows adaptation to task-specific features  
+- Small amount of real data used to slightly improve generalization  
 
 ---
 
@@ -105,37 +110,48 @@ Pipeline steps:
 
 ---
 
+## Metrics
+
+- Accuracy  
+- Confusion Matrix  
+
+---
+
 ## Model Comparison
 
 | Model         | Synthetic Acc | Real Acc |
-|---------------|-------------  |----------|
-| ResNet18 (LP) | 88%           | 91%      |
-| ResNet18 (FT) | 96%           | 93%      |
-| ResNet50 (LP) | 88%           | 93%      |
-| ResNet50 (FT) | 95%           | 94%      |
+|---------------|--------------|----------|
+| ResNet18 (LP) | 88%          | 91%      |
+| ResNet18 (FT) | 96%          | 93%      |
+| ResNet50 (LP) | 88%          | 93%      |
+| ResNet50 (FT) | 95%          | 94%      |
 
 ---
 
-## Key Insights
+## Dataset Access
 
-- A clear **synthetic → real domain gap** exists  
-- Augmentations significantly improve generalization  
-- Fine-tuning outperforms linear probe  
-- Even a small amount of real data helps bridge the gap  
-- Larger models (ResNet50) do not always outperform when data is limited  
+Synthetic dataset and real samples:
+
+👉 https://drive.google.com/drive/folders/1aZMwEyLMoWOu5gHtUaGOTgruwigfjvJQ
 
 ---
 
-## Dataset
+## Repository Structure
 
-Synthetic dataset and real test samples are available here:
-
-👉 [Google Drive Dataset Link](https://drive.google.com/drive/folders/1aZMwEyLMoWOu5gHtUaGOTgruwigfjvJQ)
+GenAI_Project2026/
+│
+├── data/ # datasets (synthetic + real)
+├── notebooks/ # training & experiments (ResNet, CLIP, DINO)
+├── code/ # scripts and utilities
+├── Images/ # README figures
+├── Presentations/ # slides
+├── README.md
+└── requirements.txt
 
 ---
 
-**Team Membrs:** Shlomi Ben Shitrit, Yarden Aviad, Avital Skop
+## Team Members
 
----
-
-## Project Structure
+- Shlomi Ben Shitrit  
+- Yarden Aviad  
+- Avital Skop  
