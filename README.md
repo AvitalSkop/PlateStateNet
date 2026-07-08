@@ -1,4 +1,4 @@
-# Food Consumption Level Classification
+# PlateStateNet - Food Consumption Level Classification
 
 ---
 
@@ -25,7 +25,7 @@ This project investigates whether **synthetic data generation and camera-based a
 
 ### Synthetic Data
 - Generated using **FLUX.1-dev**
-- ~1950 images (3 classes)
+- ~2000 images (3 classes)
 - ~300 prompts per class (high diversity)
 - Fully reproducible with fixed seeds
 
@@ -35,7 +35,7 @@ Classes:
 - Full (plate with food)
 
 ### Real Data
-- ~30 real-world CCTV images
+- ~45 real-world CCTV images
 - Used for evaluation (and minor tuning)
 
 ---
@@ -144,16 +144,19 @@ The Drive folder contains:
 ## Repository Structure
 
 ```
-GenAI_Project2026/
-│   
-├── code/            # notebooks & utilities scripts
-├── Images/          # README figures
-├── Presentations/   # slides
-├── visuals/         # training results & plots
+PlateStateNet/
+│
+├── code/            # training scripts & notebooks 
+├── Images/          # figures used in README
+├── visuals/         # results, plots, confusion matrices
+├── Presentations/   # slides & reports
+├── weights/         # trained model checkpoints
 │
 ├── README.md
 └── requirements.txt
 ```
+
+---
 
 ## How to Run
 
