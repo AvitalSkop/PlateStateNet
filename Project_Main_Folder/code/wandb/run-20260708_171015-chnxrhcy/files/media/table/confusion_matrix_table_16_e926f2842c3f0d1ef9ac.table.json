@@ -1,0 +1,1 @@
+{"columns":["Actual","Predicted","nPredictions"],"data":[["clean","clean",355.0],["clean","finished",7.0],["clean","full",0.0],["finished","clean",21.0],["finished","finished",393.0],["finished","full",20.0],["full","clean",1.0],["full","finished",17.0],["full","full",424.0]]}
