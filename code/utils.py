@@ -115,6 +115,34 @@ def next_versioned_dir(base_name: str = DATASET_BASE, root: Path | None = None) 
     return root / (base_name if max_i < 0 else f"{base_name}_v{max_i + 1}")
 
 
+def _has_files(d: Path) -> bool:
+    """True iff `d` exists and holds at least one file anywhere inside it (empty dirs don't count)."""
+    d = Path(d)
+    return d.is_dir() and any(p.is_file() for p in d.rglob("*"))
+
+
+def next_versioned_output(base_dir: Path) -> Path:
+    """A SAFE output folder that NEVER overwrites existing data (used by steps 03 and 04).
+
+    Given a destination like ``data/synthetic_degraded`` or ``data/splits``:
+      - if it doesn't exist yet, or exists but is EMPTY   -> return it unchanged (reuse it);
+      - if it already holds files                          -> return the next free sibling
+        ``<base_dir>_v<N>`` (N = 1, 2, ...), so the previous run's data is left untouched.
+
+    The folder is NOT created here - the caller makes it (and its per-class subfolders) on write.
+    So the first real run lands in the plain folder (keeping the pipeline's default paths intact),
+    and every later run auto-parks in a fresh ``_vN`` instead of deleting what's there.
+    """
+    base_dir = Path(base_dir)
+    if not _has_files(base_dir):
+        return base_dir
+    parent, name = base_dir.parent, base_dir.name
+    i = 1
+    while (parent / f"{name}_v{i}").exists():
+        i += 1
+    return parent / f"{name}_v{i}"
+
+
 # ---------------------------------------------------------------------------
 # Prompt generation (used by 01_generate_prompts)
 # ---------------------------------------------------------------------------
