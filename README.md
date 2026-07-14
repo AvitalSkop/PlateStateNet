@@ -132,16 +132,18 @@ Due to architectural differences, this results in a larger number of trainable p
 
 ---
 
-## Dataset Access
+## Dataset and Model weights Access
 
-The dataset is available via Google Drive:
+The dataset and the weights is available via Google Drive:
 
-👉 https://drive.google.com/drive/folders/1aZMwEyLMoWOu5gHtUaGOTgruwigfjvJQ
+👉 https://drive.google.com/drive/folders/1Z3eJQl92kMzYILhjZBXS53ZeAykAkeTQ?usp=sharing
 
 The Drive folder contains:
 
 - Final processed datasets (after train/validation/test split)
 - Real-world test samples
+- Model weights
+
 
 ---
 
